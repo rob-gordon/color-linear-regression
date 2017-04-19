@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<title>Sass.js Worker Console</title>
+	<style>
+		body {
+			padding: 2em;
+		}
+
+		input {
+			font-size: 2em;
+			width: 20em;
+			margin-bottom: 1em;
+		}
+	</style>
+</head>
+<body>
+	<h1>Color Linear Regression</h1>
+	<h3>Grays</h3>
+	<input type="text" id="greys">
+	<input type="text" id="greys_vals">
+
+	<script>
+
+		var grays = ['cd', '00', 'ec'];
+		
+		var _grays = document.getElementById('greys');
+		_grays.value = grays.join(', ');
+
+		var grays_vals = [];
+
+		for (var i = grays.length - 1; i >= 0; i--) {
+			grays_vals.push(parseInt(grays[i], 16));
+		}
+
+		var _grays_vals = document.getElementById('greys_vals');
+		_grays_vals.value = grays_vals.join(', ');
+
+	</script>
+</body>
+</html>
