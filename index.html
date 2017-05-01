@@ -1,42 +1,36 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-	<meta charset="utf-8" />
-	<title>Sass.js Worker Console</title>
-	<style>
-		body {
-			padding: 2em;
-		}
+<!doctype html>  
+<html lang="en">  
+    <head>
 
-		input {
-			font-size: 2em;
-			width: 20em;
-			margin-bottom: 1em;
-		}
-	</style>
-</head>
-<body>
-	<h1>Color Linear Regression</h1>
-	<h3>Grays</h3>
-	<input type="text" id="greys">
-	<input type="text" id="greys_vals">
+    </head>
+    <body>
+        <h1>Color Helper</h1>
+        <button class="load-file">Load File</button>
+        
+        
 
-	<script>
+        <script src="https://code.jquery.com/jquery-1.10.2.js"></script>
+        <script src="/socket.io/socket.io.js"></script>
+        <script>  
+            var socket = io.connect('http://localhost:4200');
+            
+            socket.on('connect', function(data) {
+                socket.emit('join', 'Hello World from client');
+            });
 
-		var grays = ['cd', '00', 'ec'];
-		
-		var _grays = document.getElementById('greys');
-		_grays.value = grays.join(', ');
+            socket.on('messages', function(data) {
+                console.log(data);
+            });
 
-		var grays_vals = [];
+            socket.on('imgData', function(data) {
+                console.log(data);
+            });
 
-		for (var i = grays.length - 1; i >= 0; i--) {
-			grays_vals.push(parseInt(grays[i], 16));
-		}
-
-		var _grays_vals = document.getElementById('greys_vals');
-		_grays_vals.value = grays_vals.join(', ');
-
-	</script>
-</body>
-</html>
+            $(function() {
+                $('.load-file').click(function() {
+                    socket.emit('run', true);
+                });
+            });
+        </script>
+    </body>
+</html>  
