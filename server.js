@@ -12,7 +12,7 @@ var is_loading = false;
 // global vars
 var ___file = "/Users/robgordon/Desktop/smile.png";
 
-app.use(express.static(__dirname + '/bower_components'));  
+app.use(express.static(__dirname + '/'));  
 app.get('/', function(req, res,next) {  
     res.sendFile(__dirname + '/index.html');
 });
@@ -21,6 +21,7 @@ server.listen(4200);
 
 io.on('connection', function(client) {  
     console.log('Client connected...');
+    
     client.emit('messages', 'Hello from server');
 
     client.on('join', function(data) {
@@ -28,19 +29,27 @@ io.on('connection', function(client) {
     });
 
     client.on('setNewFileName', function(name) {
+      console.log('New filename set: ',name);
     	___file = name;
     });
 
     client.on('run', function(run) {
     	if (run && !is_loading) {
+
     		is_loading = true;
-    		console.log("its time to run");
         
         var imgData = getDataFromFile(function(out) {
+          
+          console.log("Printing whats returned from the script", out);
+
           is_loading = false;
+          
           var list = parseImgData(out);
+          
           var colors = [];
+          
           var regex = /(\d{1,10000000}): \(([ \d]{1,3},[ \d]{1,3},[ \d]{1,3},[ \d]{1,3})\) (#[A-F0-9]{8}) ([\w\d\(,\)]+)/g;
+          
           for (var i = 0; i < out.length; i++) {
             while ((m = regex.exec(list[i])) !== null) {
                 // This is necessary to avoid infinite loops with zero-width matches
@@ -82,7 +91,7 @@ function parseImgData(imgInfo) {
 }
 
 function getDataFromFile(callback) {
-	var command = 'identify -verbose \"'+___file+'\"';
+  var command = "convert "+___file+" -define histogram:unique-colors=true -format %c histogram:info:-";
 
 	var imgInfo = shell.exec(command, function(code, out, err) {
 	is_loading = false;

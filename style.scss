@@ -1,0 +1,56 @@
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+}
+
+html * {
+    box-sizing: border-box;
+}
+
+body {
+    background-image: linear-gradient(#dedede, #ffffff);
+    font-family: Helvetica;
+}
+
+.container {
+    max-width: 1100px;
+    padding: 0 1em;
+    margin: 0 auto;
+}
+
+.load-file {
+    display: block;
+}
+
+.controls {
+
+    > * {
+        display: inline-block;
+        margin-right: 1em;
+        vertical-align: middle;
+    }
+}
+
+/*.bar {
+    border: solid 1px black;
+}*/
+
+.bar:hover {
+    stroke:  #000000;
+    stroke-width: .1em;
+}
+
+.axis--x path {
+    display: none;
+}
+
+.svg-container {
+    padding: 4em;
+}
+
+button {
+    appearance: none;
+    margin: 0;
+    padding: 1em;
+}

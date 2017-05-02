@@ -1,250 +1,28 @@
 <!doctype html>  
 <html lang="en">  
     <head>
-        <style>
-            html, body {
-                margin: 0;
-                padding: 0;
-                height: 100%;
-            }
-
-            html * {
-                box-sizing: border-box;
-            }
-
-            body {
-                background-image: linear-gradient(#dedede, #ccbdbd);
-                font-family: Helvetica;
-            }
-
-            .load-file {
-                display: block;
-            }
-            
-            /*.bar {
-                border: solid 1px black;
-            }*/
-
-            .bar:hover {
-                stroke:  #000000;
-                stroke-width: .1em;
-            }
-
-            .axis--x path {
-                display: none;
-            }
-
-            .svg-container {
-                padding: 4em;
-            }
-
-            .controls {
-                position: absolute;
-                bottom: 0;
-                width: 100%;
-                padding: 1em;
-                background: white;
-                border-top: solid 1px grey;
-                display: flex;
-                align-content: space-between;
-            }
-
-            .controls > div {
-                flex: 1;
-            }
-
-            button {
-                appearance: none;
-                margin: 0;
-                padding: 1em;
-            }
-
-            h1 {
-                margin: 0;
-                padding: 4em;
-            }
-        </style>
+        <link rel="stylesheet" type="text/css" href="style.css">
     </head>
     <body>
-        <h1>1. Color Selection</h1>
-        <div class="controls">
-            <div><input type="file" id="myfiles" onchange="onFileSelect();"></div>
-            <div>
+        <div class="container">
+            <h1>1. Color Selection</h1>
+            
+            <div class="controls">
+                <input type="file" id="myfiles" onchange="onFileSelect();">
                 <button class="load-file">Load File</button>
-            </div>
-            <div>
                 <label for="min-pixel-count">Minimum Pixel Count</label>
                 <input type="range" min="1" max="1000000" value="100" id="min-pixel-count" step="100" oninput="sliceValUpdate(value)">
                 <output for="min-pixel-count" id="mpc">100</output>
-            </div>
-            <div>
                 <button class="update-graph">Update Graph</button>
             </div>
+
+            <div class="svg-container">
+                <svg height="450"></svg>
+            </div>
         </div>
-        <div class="svg-container">
-            <svg height="450"></svg>
-        </div>
-        
         <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/4.8.0/d3.min.js"></script>
         <script src="https://code.jquery.com/jquery-1.10.2.js"></script>
         <script src="/socket.io/socket.io.js"></script>
-        <script>
-
-            var ___data = [];
-            var ___slice = 20;
-            var width, height;
-            var svg, x, y, g;
-
-            function initGraph(data) {
-                svg = d3.select("svg"),
-                    margin = {top: 20, right: 20, bottom: 70, left: 50},
-                    width = +svg.attr("width") - margin.left - margin.right,
-                    height = +svg.attr("height") - margin.top - margin.bottom;
-            }
-
-            function makeGraph(data) {
-
-                x = d3.scaleBand().rangeRound([0, width]).padding(0.1);
-                y = d3.scaleLinear().rangeRound([height, 0]);
-
-                g = svg.append("g")
-                    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
-                x.domain(data.map(function(d) { return d.hex; }));
-                y.domain([0, data[0].count]);
-
-                // X axis labels
-                g.append("g")
-                    .attr("class", "axis axis--x")
-                    .attr("transform", "translate(0," + height + ")")
-                    .call(d3.axisBottom(x))
-                    .selectAll("text")
-                        .attr("y", 0)
-                        .attr("x", 9)
-                        .attr("dy", ".35em")
-                        .attr("transform", "rotate(90)")
-                        .style("text-anchor", "start");
-
-
-                // Y axis labels
-                g.append("g")
-                    .attr("class", "axis axis--y")
-                    .call(d3.axisLeft(y).ticks(20))
-                    .append("text")
-                        .attr("transform", "rotate(-90)")
-                        .attr("y", 6)
-                        .attr("dy", "0.71em")
-                        .attr("text-anchor", "end")
-                        .text("Count");
-
-                g.selectAll(".bar")
-                    .data(data)
-                    .enter().append("rect")
-                        .attr("class", "bar")
-                        .attr("x", function(d) { return x(d.hex); })
-                        .attr("y", function(d) { return y(d.count); })
-                        .attr("fill", function(d) { return d.hex.slice(0, -2) })
-                        .attr("width", x.bandwidth())
-                        .attr("height", function(d) { return height - y(d.count); });
-            }
-
-            function updateGraph() {
-                
-                data = sliceData();
-                
-                x.domain(data.map(function(d) { return d.hex; }));
-                y.domain([0, data[0].count]); //d3.max(data, function(d) { return d.count; })]);
-
-                g.selectAll(".axis.axis--x")
-                    .transition()
-                    .duration(750)
-                    .call(d3.axisBottom(x))
-                        .selectAll("text")
-                        .attr("y", 0)
-                        .attr("x", 9)
-                        .attr("dy", ".35em")
-                        .attr("transform", "rotate(90)")
-                        .style("text-anchor", "start");
-
-                //g.selectAll(".axis.axis-y").transition().duration(750).call(d3.axisLeft(y).ticks(20));
-                var bars = g.selectAll('.bar').data(data);
-
-                bars.exit()
-                    .transition()
-                    .duration(375)
-                    .attr("y", y(0))
-                    .attr("height", height - y(0))
-                    .style('fill-opacity', 1e-6)
-                    .remove();
-
-                bars.enter().append("rect")
-                    .attr("class", "bar")
-                    .attr("y", y(0))
-                    .attr("height", height - y(0));
-
-                // the "UPDATE" set:
-                bars.transition().duration(375).attr("x", function(d) { return x(d.hex); })
-                    .attr("class", "bar")
-                    .attr("x", function(d) { return x(d.hex); })
-                    .attr("y", function(d) { return y(d.count); })
-                    .attr("fill", function(d) { return d.hex.slice(0, -2) })
-                    .attr("width", x.bandwidth())
-                    .attr("height", function(d) { return height - y(d.count); });
-
-            }
-
-            function sliceData() {
-                return ___data.filter(function(a) {
-                    return a.count > ___slice;
-                });
-            }
-
-            function prepareData(data) {
-                data.sort(function(a, b) {
-                    return b.count - a.count;
-                });
-                initGraph(sliceData());
-                makeGraph(sliceData());
-            }
-
-            function sliceValUpdate(val) {
-                document.querySelector('#mpc').value = val;
-                ___slice = parseInt(val);
-            }
-
-            var socket = io.connect('http://localhost:4200');
-            
-            socket.on('connect', function(data) {
-                socket.emit('join', 'Hello World from client');
-            });
-
-            socket.on('messages', function(data) {
-                console.log(data);
-            });
-
-            socket.on('imgData', function(data) {
-                ___data = data;
-                prepareData(data);
-            });
-
-            function onFileSelect() {
-                var filename = document.getElementById('myfiles').files[0].name;
-                socket.emit('setNewFileName', "/Users/robgordon/Desktop/"+filename);
-            }
-
-            $(function() {
-
-                $('svg').attr('width', ($('.svg-container').width()));
-
-                $('.load-file').click(function() {
-                    socket.emit('run', true);
-                });
-
-                $('.update-graph').click(function() {
-                    updateGraph();
-                    updateGraph();
-                });
-            });
-        </script>
+        <script src="script.js"></script>
     </body>
 </html>  
