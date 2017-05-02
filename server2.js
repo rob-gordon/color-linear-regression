@@ -28,7 +28,31 @@ io.on('connection', function(client) {
     	if (run && !is_loading) {
     		is_loading = true;
     		console.log("its time to run");
-    		client.emit('imgData', parseImgData(getDataFromFile()));
+        
+        var imgData = getDataFromFile(function(out) {
+          is_loading = false;
+          var list = parseImgData(out);
+          var colors = [];
+          var regex = /(\d{1,10000000}): \(([ \d]{1,3},[ \d]{1,3},[ \d]{1,3},[ \d]{1,3})\) (#[A-F0-9]{8}) ([\w\d\(,\)]+)/g;
+          for (var i = 0; i < out.length; i++) {
+            while ((m = regex.exec(list[i])) !== null) {
+                // This is necessary to avoid infinite loops with zero-width matches
+                if (m.index === regex.lastIndex) {
+                    regex.lastIndex++;
+                }
+
+                var obj = {
+                  count: m[1],
+                  rgba: m[2],
+                  hex: m[3],
+                  name: m[4]
+                };
+
+                colors.push(obj);
+            }
+          }
+          client.emit('imgData', colors);
+        });
     	}
     });
 
@@ -50,9 +74,12 @@ function parseImgData(imgInfo) {
 	return matchArr;
 }
 
-function getDataFromFile() {
+function getDataFromFile(callback) {
 	var file = "~/Desktop/smile.png"
 	var command = 'identify -verbose '+file;
-	var imgInfo = shell.execSync(command).stdout;
-
+	var imgInfo = shell.exec(command, function(code, out, err) {
+    is_loading = false;
+    callback.call(this, out);
+    return out;
+  });
 }
